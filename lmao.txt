@@ -1,0 +1,23 @@
+
+qoneqt@Qoneqts-MacBook-Pro chromion % node -e "const { ethers } = require('ethers'); 
+const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+const senderPrivateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+const wallet = new ethers.Wallet(senderPrivateKey, provider);
+const targetAddress = '0xE2b39f4cfFA5B17434e47Ab5F54b984155e4b7aD';
+const amountInWei = ethers.parseUnits('10', 18);
+const tx = { to: targetAddress, value: amountInWei, gasLimit: 21000, gasPrice: ethers.parseUnits('20', 'gwei') };
+wallet.sendTransaction(tx).then(txResponse => {
+  console.log('Transaction sent: ', txResponse.hash);
+  return txResponse.wait();
+}).then(receipt => {
+  console.log('Transaction confirmed in block: ', receipt.blockNumber);
+}).catch(err => console.error(err));"
+
+
+
+````
+Transaction sent:  0x3e52183d4f1b1e5fdb74e124d2c17c885f0eecb6ac45139a6d59b10039ca743d
+Transaction confirmed in block:  3
+qoneqt@Qoneqts-MacBook-Pro chromion % 
+
+````

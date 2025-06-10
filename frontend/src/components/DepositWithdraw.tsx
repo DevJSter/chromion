@@ -1,0 +1,223 @@
+'use client';
+
+import { useState } from 'react';
+import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther, formatEther } from 'viem';
+import { YieldVaultABI, MockDAIABI } from '@/config/abis';
+import { contractAddresses } from '@/config/wagmi';
+import { sepolia } from 'wagmi/chains';
+import { ArrowDown, ArrowUp, Coins, Loader2 } from 'lucide-react';
+
+export default function DepositWithdraw() {
+  const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
+  const [amount, setAmount] = useState('');
+  const { address, chain } = useAccount();
+  
+  const currentChainId = chain?.id || sepolia.id;
+  const vaultAddress = contractAddresses[currentChainId]?.yieldVault;
+  const daiAddress = contractAddresses[currentChainId]?.mockDAI;
+
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  // Read DAI balance
+  const { data: daiBalance } = useReadContract({
+    address: daiAddress,
+    abi: MockDAIABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+  });
+
+  // Read vault balance
+  const { data: vaultBalance } = useReadContract({
+    address: vaultAddress,
+    abi: YieldVaultABI,
+    functionName: 'getBalance',
+    args: address ? [address] : undefined,
+  });
+
+  const handleDeposit = async () => {
+    if (!amount || !vaultAddress) return;
+
+    try {
+      const amountWei = parseEther(amount);
+      
+      // First approve DAI spending
+      writeContract({
+        address: daiAddress,
+        abi: MockDAIABI,
+        functionName: 'approve',
+        args: [vaultAddress, amountWei],
+      });
+      
+      // Then deposit (this would need to be sequential in a real app)
+      setTimeout(() => {
+        writeContract({
+          address: vaultAddress,
+          abi: YieldVaultABI,
+          functionName: 'deposit',
+          args: [amountWei],
+        });
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Deposit failed:', error);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!amount || !vaultAddress) return;
+
+    try {
+      const amountWei = parseEther(amount);
+      writeContract({
+        address: vaultAddress,
+        abi: YieldVaultABI,
+        functionName: 'withdraw',
+        args: [amountWei],
+      });
+    } catch (error) {
+      console.error('Withdraw failed:', error);
+    }
+  };
+
+  const handleFaucet = async () => {
+    if (!daiAddress) return;
+
+    try {
+      writeContract({
+        address: daiAddress,
+        abi: MockDAIABI,
+        functionName: 'faucet',
+      });
+    } catch (error) {
+      console.error('Faucet failed:', error);
+    }
+  };
+
+  const formatBalance = (balance: bigint | undefined) => {
+    if (!balance) return '0.00';
+    return parseFloat(formatEther(balance)).toFixed(2);
+  };
+
+  const maxDeposit = daiBalance ? formatEther(daiBalance) : '0';
+  const maxWithdraw = vaultBalance ? formatEther(vaultBalance) : '0';
+
+  return (
+    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Deposit & Withdraw</h2>
+        <button
+          onClick={handleFaucet}
+          disabled={isPending || isConfirming}
+          className="flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+        >
+          <Coins className="h-4 w-4 mr-1" />
+          Get Test DAI
+        </button>
+      </div>
+
+      {/* Tab Buttons */}
+      <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+        <button
+          onClick={() => setActiveTab('deposit')}
+          className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md font-medium transition-colors ${
+            activeTab === 'deposit'
+              ? 'bg-white text-green-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <ArrowDown className="h-4 w-4 mr-2" />
+          Deposit
+        </button>
+        <button
+          onClick={() => setActiveTab('withdraw')}
+          className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md font-medium transition-colors ${
+            activeTab === 'withdraw'
+              ? 'bg-white text-red-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <ArrowUp className="h-4 w-4 mr-2" />
+          Withdraw
+        </button>
+      </div>
+
+      {/* Balance Display */}
+      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">DAI Balance:</span>
+          <span className="font-medium">{formatBalance(daiBalance)} DAI</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">Vault Balance:</span>
+          <span className="font-medium">{formatBalance(vaultBalance)} DAI</span>
+        </div>
+      </div>
+
+      {/* Amount Input */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Amount to {activeTab}
+        </label>
+        <div className="relative">
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <div className="absolute right-3 top-3 text-gray-500">DAI</div>
+        </div>
+        <div className="flex justify-between mt-2 text-sm text-gray-600">
+          <span>
+            Max: {activeTab === 'deposit' ? maxDeposit : maxWithdraw} DAI
+          </span>
+          <button
+            onClick={() => setAmount(activeTab === 'deposit' ? maxDeposit : maxWithdraw)}
+            className="text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Use Max
+          </button>
+        </div>
+      </div>
+
+      {/* Action Button */}
+      <button
+        onClick={activeTab === 'deposit' ? handleDeposit : handleWithdraw}
+        disabled={!amount || isPending || isConfirming}
+        className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center ${
+          activeTab === 'deposit'
+            ? 'bg-green-600 hover:bg-green-700 text-white'
+            : 'bg-red-600 hover:bg-red-700 text-white'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {(isPending || isConfirming) && (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        )}
+        {isPending || isConfirming
+          ? 'Processing...'
+          : `${activeTab === 'deposit' ? 'Deposit' : 'Withdraw'} ${amount || '0'} DAI`
+        }
+      </button>
+
+      {/* Transaction Status */}
+      {hash && (
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <div className="text-sm">
+            {isConfirming && (
+              <p className="text-blue-600">Transaction confirming...</p>
+            )}
+            {isSuccess && (
+              <p className="text-green-600">Transaction successful!</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
