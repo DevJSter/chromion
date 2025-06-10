@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import "./interfaces/ILendingProtocol.sol";
 
 /**
@@ -41,7 +41,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         address _token,
         address _aave,
         address _compound
-    ) {
+    ) Ownable(msg.sender) {
         token = IERC20(_token);
         aave = ILendingProtocol(_aave);
         compound = ILendingProtocol(_compound);
@@ -63,7 +63,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         token.safeTransferFrom(msg.sender, address(this), amount);
         
         // Approve and deposit to current protocol
-        token.safeApprove(address(currentProtocol), amount);
+        token.forceApprove(address(currentProtocol), amount);
         currentProtocol.deposit(amount);
         
         balances[msg.sender] += amount;
@@ -197,7 +197,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
             currentProtocol.withdraw(amount);
             
             // Deposit into new protocol
-            token.safeApprove(address(newProtocol), amount);
+            token.forceApprove(address(newProtocol), amount);
             newProtocol.deposit(amount);
         }
         
