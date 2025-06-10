@@ -32,4 +32,10 @@ interface ILendingProtocol {
      * @dev Get the name of the protocol
      */
     function getName() external view returns (string memory);
+
+    /**
+     * @dev Force update yield calculation for a user
+     * @param user User address to update yield for
+     */
+    function updateYield(address user) external;
 }

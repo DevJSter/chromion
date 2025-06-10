@@ -2,15 +2,14 @@
 
 import { useReadContract } from 'wagmi';
 import { YieldVaultABI } from '@/config/abis';
-import { contractAddresses } from '@/config/wagmi';
-import { sepolia } from 'wagmi/chains';
+import { contractAddresses, anvil } from '@/config/wagmi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Activity } from 'lucide-react';
 import { useAccount } from 'wagmi';
 
 export default function ProtocolComparison() {
   const { chain } = useAccount();
-  const currentChainId = chain?.id || sepolia.id;
+  const currentChainId = chain?.id || anvil.id;
   const vaultAddress = contractAddresses[currentChainId]?.yieldVault;
 
   // Read protocol APYs

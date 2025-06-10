@@ -9,10 +9,16 @@ import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatible
 import "./interfaces/ILendingProtocol.sol";
 
 /**
- * @title YieldVault
- * @dev Auto-rebalancing yield vault with AUTO-YIELD COMPOUNDING powered by Chainlink Automation
+ * @title YieldVaultV2
+ * @dev AUTO-YIELD PORTFOLIO MANAGER with real yield compounding and Chainlink Automation
+ * Features:
+ * - Automatic yield accrual over time
+ * - Compound growth (reinvestment of yields)
+ * - Continuous yield optimization
+ * - Share-based vault system
+ * - Multi-frequency automation (compounding + rebalancing)
  */
-contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
+contract YieldVaultV2 is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable token;
@@ -26,7 +32,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
     struct UserDeposit {
         uint256 principal;        // Original deposit amount
         uint256 shares;          // Vault shares owned
-        uint256 lastCompoundTime; // Last time yield was compounded
+        uint256 depositTime;     // When user deposited
     }
     
     mapping(address => UserDeposit) public userDeposits;
@@ -37,21 +43,20 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
     uint256 public totalYieldGenerated;
     uint256 public lastCompoundTime;
     
-    // Compound frequency (default: every hour)
-    uint256 public compoundInterval = 1 hours;
-    
-    // Minimum APY difference to trigger rebalance (in basis points)
-    uint256 public rebalanceThreshold = 100; // 1%
+    // Auto-yield parameters
+    uint256 public compoundInterval = 1 hours;     // Compound every hour
+    uint256 public rebalanceThreshold = 50;       // 0.5% APY difference
     
     // Performance tracking
     uint256 public totalRebalances;
     uint256 public totalCompounds;
+    uint256 public vaultStartTime;
     
     // Events
     event Deposited(address indexed user, uint256 amount, uint256 shares);
     event Withdrawn(address indexed user, uint256 amount, uint256 shares, uint256 yield);
     event Rebalanced(address indexed oldProtocol, address indexed newProtocol, uint256 amount, uint256 oldAPY, uint256 newAPY);
-    event YieldCompounded(uint256 yieldAmount, uint256 newTotalAssets);
+    event YieldCompounded(uint256 yieldAmount, uint256 newTotalAssets, uint256 compoundCount);
     event RebalanceThresholdUpdated(uint256 newThreshold);
     event CompoundIntervalUpdated(uint256 newInterval);
 
@@ -64,6 +69,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         aave = ILendingProtocol(_aave);
         compound = ILendingProtocol(_compound);
         lastCompoundTime = block.timestamp;
+        vaultStartTime = block.timestamp;
         
         // Start with the protocol that has higher APY
         if (aave.getAPY() >= compound.getAPY()) {
@@ -96,7 +102,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         // Update user deposit
         userDeposits[msg.sender].principal += amount;
         userDeposits[msg.sender].shares += sharesToMint;
-        userDeposits[msg.sender].lastCompoundTime = block.timestamp;
+        userDeposits[msg.sender].depositTime = block.timestamp;
         
         // Update vault totals
         totalShares += sharesToMint;
@@ -125,7 +131,7 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         
         // Calculate yield earned
         uint256 principalPortion = (shares * userDeposits[msg.sender].principal) / userDeposits[msg.sender].shares;
-        uint256 yieldPortion = withdrawAmount - principalPortion;
+        uint256 yieldPortion = withdrawAmount > principalPortion ? withdrawAmount - principalPortion : 0;
         
         // Update user deposit
         userDeposits[msg.sender].shares -= shares;
@@ -141,6 +147,15 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         token.safeTransfer(msg.sender, withdrawAmount);
         
         emit Withdrawn(msg.sender, withdrawAmount, shares, yieldPortion);
+    }
+
+    /**
+     * @dev Withdraw all user's vault balance
+     */
+    function withdrawAll() external {
+        uint256 userShares = userDeposits[msg.sender].shares;
+        require(userShares > 0, "No balance to withdraw");
+        this.withdraw(userShares);
     }
 
     /**
@@ -172,20 +187,19 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         uint256 totalYield,
         uint256 apy,
         uint256 rebalanceCount,
-        uint256 compoundCount
+        uint256 compoundCount,
+        uint256 sharePrice
     ) {
         totalAssets = _getTotalAssets();
         totalYield = totalYieldGenerated;
-        
-        // Calculate estimated APY based on current protocol
         apy = currentProtocol.getAPY();
-        
         rebalanceCount = totalRebalances;
         compoundCount = totalCompounds;
+        sharePrice = totalShares > 0 ? (totalAssets * 1e18) / totalShares : 1e18;
     }
 
     /**
-     * @dev Compound accrued yield (internal function)
+     * @dev Compound accrued yield - THE CORE AUTO-YIELD FUNCTIONALITY
      */
     function _compoundYield() internal {
         // Force yield update on current protocol
@@ -198,11 +212,94 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         uint256 currentBalance = currentProtocol.getBalance();
         if (currentBalance > totalPrincipal) {
             uint256 newYield = currentBalance - totalPrincipal;
+            
+            // THIS IS THE KEY: Update totalPrincipal to include compounded yield
+            // This creates compound growth by treating yield as new principal
+            totalPrincipal = currentBalance;
             totalYieldGenerated += newYield;
             lastCompoundTime = block.timestamp;
             totalCompounds++;
             
-            emit YieldCompounded(newYield, currentBalance);
+            emit YieldCompounded(newYield, currentBalance, totalCompounds);
+        }
+    }
+
+    /**
+     * @dev Manual compound yield (anyone can call)
+     */
+    function compoundYield() external {
+        _compoundYield();
+    }
+
+    /**
+     * @dev Chainlink Automation: Check if rebalance OR yield compounding is needed
+     */
+    function checkUpkeep(bytes calldata /* checkData */) 
+        external 
+        view 
+        override 
+        returns (bool upkeepNeeded, bytes memory performData) 
+    {
+        // Check if yield compounding is needed (more frequent)
+        bool needsCompounding = block.timestamp >= lastCompoundTime + compoundInterval;
+        
+        // Check if rebalancing is needed
+        bool needsRebalancing = false;
+        uint256 aaveAPY = aave.getAPY();
+        uint256 compoundAPY = compound.getAPY();
+        
+        if (address(currentProtocol) == address(aave)) {
+            needsRebalancing = compoundAPY > aaveAPY + rebalanceThreshold;
+        } else {
+            needsRebalancing = aaveAPY > compoundAPY + rebalanceThreshold;
+        }
+        
+        // Only perform upkeep if we have assets
+        bool hasAssets = _getTotalAssets() > 0;
+        
+        upkeepNeeded = hasAssets && (needsCompounding || needsRebalancing);
+        
+        // Encode which action to perform (0 = compound, 1 = rebalance, 2 = both)
+        if (needsCompounding && needsRebalancing) {
+            performData = abi.encode(2); // Both
+        } else if (needsRebalancing) {
+            performData = abi.encode(1); // Rebalance only
+        } else {
+            performData = abi.encode(0); // Compound only
+        }
+    }
+
+    /**
+     * @dev Chainlink Automation: Perform upkeep (compound yield and/or rebalance)
+     */
+    function performUpkeep(bytes calldata performData) external override {
+        uint256 action = abi.decode(performData, (uint256));
+        
+        // Always compound first if needed
+        if (action == 0 || action == 2) {
+            _compoundYield();
+        }
+        
+        // Then rebalance if needed
+        if (action == 1 || action == 2) {
+            uint256 aaveAPY = aave.getAPY();
+            uint256 compoundAPY = compound.getAPY();
+            
+            ILendingProtocol newProtocol;
+            uint256 oldAPY;
+            uint256 newAPY;
+            
+            if (address(currentProtocol) == address(aave) && compoundAPY > aaveAPY + rebalanceThreshold) {
+                newProtocol = compound;
+                oldAPY = aaveAPY;
+                newAPY = compoundAPY;
+                _rebalance(newProtocol, oldAPY, newAPY);
+            } else if (address(currentProtocol) == address(compound) && aaveAPY > compoundAPY + rebalanceThreshold) {
+                newProtocol = aave;
+                oldAPY = compoundAPY;
+                newAPY = aaveAPY;
+                _rebalance(newProtocol, oldAPY, newAPY);
+            }
         }
     }
 
@@ -226,56 +323,6 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
      */
     function getProtocolAPYs() external view returns (uint256 aaveAPY, uint256 compoundAPY) {
         return (aave.getAPY(), compound.getAPY());
-    }
-
-    /**
-     * @dev Chainlink Automation: Check if rebalance is needed
-     */
-    function checkUpkeep(bytes calldata /* checkData */) 
-        external 
-        view 
-        override 
-        returns (bool upkeepNeeded, bytes memory /* performData */) 
-    {
-        uint256 aaveAPY = aave.getAPY();
-        uint256 compoundAPY = compound.getAPY();
-        
-        if (address(currentProtocol) == address(aave)) {
-            // Currently in Aave, check if Compound is significantly better
-            upkeepNeeded = compoundAPY > aaveAPY + rebalanceThreshold;
-        } else {
-            // Currently in Compound, check if Aave is significantly better
-            upkeepNeeded = aaveAPY > compoundAPY + rebalanceThreshold;
-        }
-        
-        // Only rebalance if we have assets
-        upkeepNeeded = upkeepNeeded && totalShares > 0;
-    }
-
-    /**
-     * @dev Chainlink Automation: Perform rebalance
-     */
-    function performUpkeep(bytes calldata /* performData */) external override {
-        uint256 aaveAPY = aave.getAPY();
-        uint256 compoundAPY = compound.getAPY();
-        
-        ILendingProtocol newProtocol;
-        uint256 oldAPY;
-        uint256 newAPY;
-        
-        if (address(currentProtocol) == address(aave) && compoundAPY > aaveAPY + rebalanceThreshold) {
-            newProtocol = compound;
-            oldAPY = aaveAPY;
-            newAPY = compoundAPY;
-        } else if (address(currentProtocol) == address(compound) && aaveAPY > compoundAPY + rebalanceThreshold) {
-            newProtocol = aave;
-            oldAPY = compoundAPY;
-            newAPY = aaveAPY;
-        } else {
-            return; // No rebalance needed
-        }
-        
-        _rebalance(newProtocol, oldAPY, newAPY);
     }
 
     /**
@@ -311,7 +358,6 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         }
         
         currentProtocol = newProtocol;
-        
         totalRebalances++;
         
         emit Rebalanced(oldProtocolAddress, address(newProtocol), amount, oldAPY, newAPY);
@@ -330,9 +376,17 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
      * @dev Update compound interval (owner only)
      */
     function setCompoundInterval(uint256 newInterval) external onlyOwner {
-        require(newInterval > 0, "Interval must be greater than 0");
+        require(newInterval >= 10 minutes, "Interval too short");
         compoundInterval = newInterval;
         emit CompoundIntervalUpdated(newInterval);
+    }
+
+    /**
+     * @dev Get time until next compound
+     */
+    function timeUntilNextCompound() external view returns (uint256) {
+        uint256 nextCompoundTime = lastCompoundTime + compoundInterval;
+        return nextCompoundTime > block.timestamp ? nextCompoundTime - block.timestamp : 0;
     }
 
     /**
@@ -342,6 +396,41 @@ contract YieldVault is ReentrancyGuard, Ownable, AutomationCompatibleInterface {
         uint256 amount = currentProtocol.getBalance();
         if (amount > 0) {
             currentProtocol.withdraw(amount);
+        }
+    }
+
+    /**
+     * @dev Get vault status summary
+     */
+    function getVaultStatus() external view returns (
+        string memory currentProtocolName,
+        uint256 totalAssets,
+        uint256 totalYield,
+        uint256 annualizedReturn,
+        uint256 nextCompoundIn,
+        bool shouldRebalance
+    ) {
+        currentProtocolName = currentProtocol.getName();
+        totalAssets = _getTotalAssets();
+        totalYield = totalYieldGenerated;
+        
+        // Calculate annualized return
+        uint256 timeElapsed = block.timestamp - vaultStartTime;
+        if (timeElapsed > 0 && totalPrincipal > 0) {
+            annualizedReturn = (totalYield * 365 days * 10000) / (totalPrincipal * timeElapsed);
+        }
+        
+        // Calculate time until next compound
+        uint256 nextCompoundTime = lastCompoundTime + compoundInterval;
+        nextCompoundIn = nextCompoundTime > block.timestamp ? nextCompoundTime - block.timestamp : 0;
+        
+        // Check if should rebalance
+        uint256 aaveAPY = aave.getAPY();
+        uint256 compoundAPY = compound.getAPY();
+        if (address(currentProtocol) == address(aave)) {
+            shouldRebalance = compoundAPY > aaveAPY + rebalanceThreshold;
+        } else {
+            shouldRebalance = aaveAPY > compoundAPY + rebalanceThreshold;
         }
     }
 }

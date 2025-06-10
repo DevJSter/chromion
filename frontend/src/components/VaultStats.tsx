@@ -2,16 +2,16 @@
 
 import { useAccount, useReadContract } from 'wagmi';
 import { formatEther } from 'viem';
-import { YieldVaultABI } from '@/config/abis';
-import { contractAddresses } from '@/config/wagmi';
-import { sepolia } from 'wagmi/chains';
+import { YieldVaultABI, MockDAIABI } from '@/config/abis';
+import { contractAddresses, anvil } from '@/config/wagmi';
 import { DollarSign, TrendingUp, Activity, Users } from 'lucide-react';
 
 export default function VaultStats() {
   const { address, chain } = useAccount();
   
-  const currentChainId = chain?.id || sepolia.id;
+  const currentChainId = chain?.id || anvil.id;
   const vaultAddress = contractAddresses[currentChainId]?.yieldVault;
+  const daiAddress = contractAddresses[currentChainId]?.mockDAI;
 
   // Read user balance
   const { data: userBalance } = useReadContract({
@@ -40,6 +40,13 @@ export default function VaultStats() {
     address: vaultAddress,
     abi: YieldVaultABI,
     functionName: 'getProtocolAPYs',
+  });
+
+  // Read total DAI supply (for context)
+  const { data: totalDAISupply } = useReadContract({
+    address: daiAddress,
+    abi: MockDAIABI,
+    functionName: 'totalSupply',
   });
 
   const formatAPY = (apy: bigint | undefined) => {

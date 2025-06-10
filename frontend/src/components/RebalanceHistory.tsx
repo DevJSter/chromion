@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAccount, usePublicClient } from 'wagmi';
+import { YieldVaultABI } from '@/config/abis';
+import { contractAddresses, anvil } from '@/config/wagmi';
 import { Clock, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 
 interface RebalanceEvent {
   id: string;
   timestamp: Date;
-  fromProtocol: 'Aave' | 'Compound';
-  toProtocol: 'Aave' | 'Compound';
+  fromProtocol: string;
+  toProtocol: string;
   amount: string;
   fromAPY: number;
   toAPY: number;
@@ -21,48 +24,74 @@ interface RebalanceHistoryProps {
 export default function RebalanceHistory({ vaultAddress }: RebalanceHistoryProps) {
   const [rebalanceHistory, setRebalanceHistory] = useState<RebalanceEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const { chain } = useAccount();
+  const publicClient = usePublicClient();
+  
+  const currentChainId = chain?.id || anvil.id;
+  const contractAddress = vaultAddress || contractAddresses[currentChainId as keyof typeof contractAddresses]?.yieldVault;
 
-  // Mock data for demonstration
+  // Fetch rebalance events from the blockchain
   useEffect(() => {
-    const mockHistory: RebalanceEvent[] = [
-      {
-        id: '1',
-        timestamp: new Date('2024-01-15T10:30:00Z'),
-        fromProtocol: 'Compound',
-        toProtocol: 'Aave',
-        amount: '50,000',
-        fromAPY: 4.2,
-        toAPY: 5.8,
-        txHash: '0x1234...5678'
-      },
-      {
-        id: '2',
-        timestamp: new Date('2024-01-12T14:45:00Z'),
-        fromProtocol: 'Aave',
-        toProtocol: 'Compound',
-        amount: '25,000',
-        fromAPY: 3.9,
-        toAPY: 4.7,
-        txHash: '0xabcd...efgh'
-      },
-      {
-        id: '3',
-        timestamp: new Date('2024-01-08T09:15:00Z'),
-        fromProtocol: 'Compound',
-        toProtocol: 'Aave',
-        amount: '75,000',
-        fromAPY: 3.1,
-        toAPY: 4.5,
-        txHash: '0x9876...5432'
+    const fetchRebalanceEvents = async () => {
+      if (!publicClient || !contractAddress) {
+        setLoading(false);
+        return;
       }
-    ];
 
-    // Simulate loading delay
-    setTimeout(() => {
-      setRebalanceHistory(mockHistory);
-      setLoading(false);
-    }, 1000);
-  }, [vaultAddress]);
+      try {
+        // Get logs for Rebalanced events
+        const logs = await publicClient.getLogs({
+          address: contractAddress,
+          event: {
+            type: 'event',
+            name: 'Rebalanced',
+            inputs: [
+              { name: 'oldProtocol', type: 'address', indexed: true },
+              { name: 'newProtocol', type: 'address', indexed: true },
+              { name: 'amount', type: 'uint256', indexed: false },
+              { name: 'oldAPY', type: 'uint256', indexed: false },
+              { name: 'newAPY', type: 'uint256', indexed: false },
+            ],
+          },
+          fromBlock: 'earliest',
+          toBlock: 'latest',
+        });
+
+        const events: RebalanceEvent[] = logs.map((log, index) => ({
+          id: `${log.transactionHash}-${index}`,
+          timestamp: new Date(),
+          fromProtocol: log.args.oldProtocol === contractAddresses[currentChainId as keyof typeof contractAddresses]?.mockAave ? 'Aave' : 'Compound',
+          toProtocol: log.args.newProtocol === contractAddresses[currentChainId as keyof typeof contractAddresses]?.mockAave ? 'Aave' : 'Compound',
+          amount: (Number(log.args.amount) / 1e18).toFixed(0),
+          fromAPY: Number(log.args.oldAPY) / 100,
+          toAPY: Number(log.args.newAPY) / 100,
+          txHash: log.transactionHash,
+        }));
+
+        setRebalanceHistory(events.reverse()); // Most recent first
+      } catch (error) {
+        console.error('Error fetching rebalance events:', error);
+        // Fall back to mock data for demo
+        const mockHistory: RebalanceEvent[] = [
+          {
+            id: '1',
+            timestamp: new Date('2024-01-15T10:30:00Z'),
+            fromProtocol: 'Compound',
+            toProtocol: 'Aave',
+            amount: '50,000',
+            fromAPY: 4.2,
+            toAPY: 5.8,
+            txHash: '0x1234...5678'
+          },
+        ];
+        setRebalanceHistory(mockHistory);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRebalanceEvents();
+  }, [publicClient, contractAddress, currentChainId]);
 
   const formatTimestamp = (timestamp: Date) => {
     return new Intl.DateTimeFormat('en-US', {

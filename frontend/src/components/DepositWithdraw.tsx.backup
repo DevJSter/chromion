@@ -58,13 +58,13 @@ export default function DepositWithdraw() {
   }, [isSuccess, refetchDaiBalance, refetchVaultBalance, refetchAllowance]);
 
   const handleMintDAI = async () => {
-    if (!daiAddress || !address) return;
+    if (!daiAddress) return;
 
     writeContract({
       address: daiAddress,
       abi: MockDAIABI,
       functionName: 'mint',
-      args: [address, parseEther('1000')], // Mint 1000 DAI
+      args: [address!, parseEther('1000')], // Mint 1000 DAI
     });
   };
 
@@ -98,17 +98,53 @@ export default function DepositWithdraw() {
       args: [amountWei],
     });
   };
+        functionName: 'approve',
+        args: [vaultAddress, amountWei],
+      });
+      
+      // Then deposit (this would need to be sequential in a real app)
+      setTimeout(() => {
+        writeContract({
+          address: vaultAddress,
+          abi: YieldVaultABI,
+          functionName: 'deposit',
+          args: [amountWei],
+        });
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Deposit failed:', error);
+    }
+  };
 
   const handleWithdraw = async () => {
     if (!amount || !vaultAddress) return;
 
-    const amountWei = parseEther(amount);
-    writeContract({
-      address: vaultAddress,
-      abi: YieldVaultABI,
-      functionName: 'withdraw',
-      args: [amountWei],
-    });
+    try {
+      const amountWei = parseEther(amount);
+      writeContract({
+        address: vaultAddress,
+        abi: YieldVaultABI,
+        functionName: 'withdraw',
+        args: [amountWei],
+      });
+    } catch (error) {
+      console.error('Withdraw failed:', error);
+    }
+  };
+
+  const handleFaucet = async () => {
+    if (!daiAddress) return;
+
+    try {
+      writeContract({
+        address: daiAddress,
+        abi: MockDAIABI,
+        functionName: 'faucet',
+      });
+    } catch (error) {
+      console.error('Faucet failed:', error);
+    }
   };
 
   const formatBalance = (balance: bigint | undefined) => {
@@ -119,26 +155,17 @@ export default function DepositWithdraw() {
   const maxDeposit = daiBalance ? formatEther(daiBalance) : '0';
   const maxWithdraw = vaultBalance ? formatEther(vaultBalance) : '0';
 
-  const needsApproval = () => {
-    if (!amount || !allowance) return false;
-    return parseEther(amount) > allowance;
-  };
-
   return (
     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Deposit & Withdraw</h2>
         <button
-          onClick={handleMintDAI}
+          onClick={handleFaucet}
           disabled={isPending || isConfirming}
-          className="flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          className="flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
         >
-          {isPending || isConfirming ? (
-            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-          ) : (
-            <Banknote className="h-4 w-4 mr-1" />
-          )}
-          Mint 1000 DAI
+          <Coins className="h-4 w-4 mr-1" />
+          Get Test DAI
         </button>
       </div>
 
@@ -170,7 +197,7 @@ export default function DepositWithdraw() {
 
       {/* Balance Display */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <div className="flex justify-between text-sm mb-2">
+        <div className="flex justify-between text-sm">
           <span className="text-gray-600">DAI Balance:</span>
           <span className="font-medium">{formatBalance(daiBalance)} DAI</span>
         </div>
@@ -191,17 +218,17 @@ export default function DepositWithdraw() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            step="0.01"
-            min="0"
             className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div className="absolute right-3 top-3 text-gray-500">DAI</div>
         </div>
         <div className="flex justify-between mt-2 text-sm text-gray-600">
-          <span>Available: {activeTab === 'deposit' ? maxDeposit : maxWithdraw} DAI</span>
+          <span>
+            Max: {activeTab === 'deposit' ? maxDeposit : maxWithdraw} DAI
+          </span>
           <button
             onClick={() => setAmount(activeTab === 'deposit' ? maxDeposit : maxWithdraw)}
-            className="text-blue-600 hover:text-blue-800 font-medium"
+            className="text-blue-600 hover:text-blue-700 font-medium"
           >
             Use Max
           </button>
@@ -209,53 +236,35 @@ export default function DepositWithdraw() {
       </div>
 
       {/* Action Button */}
-      <div className="space-y-3">
-        {activeTab === 'deposit' && needsApproval() && (
-          <button
-            onClick={handleApprove}
-            disabled={isPending || isConfirming || !amount}
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {isPending || isConfirming ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : null}
-            {approvalStep === 'approving' ? 'Approving...' : `Approve ${amount} DAI`}
-          </button>
+      <button
+        onClick={activeTab === 'deposit' ? handleDeposit : handleWithdraw}
+        disabled={!amount || isPending || isConfirming}
+        className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center ${
+          activeTab === 'deposit'
+            ? 'bg-green-600 hover:bg-green-700 text-white'
+            : 'bg-red-600 hover:bg-red-700 text-white'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {(isPending || isConfirming) && (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
         )}
-        
-        <button
-          onClick={activeTab === 'deposit' ? handleDeposit : handleWithdraw}
-          disabled={isPending || isConfirming || !amount || (activeTab === 'deposit' && needsApproval())}
-          className={`w-full font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
-            activeTab === 'deposit'
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-red-600 hover:bg-red-700 text-white'
-          }`}
-        >
-          {isPending || isConfirming ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : activeTab === 'deposit' ? (
-            <ArrowDown className="h-4 w-4 mr-2" />
-          ) : (
-            <ArrowUp className="h-4 w-4 mr-2" />
-          )}
-          {isPending || isConfirming
-            ? `${activeTab === 'deposit' ? 'Depositing' : 'Withdrawing'}...`
-            : `${activeTab === 'deposit' ? 'Deposit' : 'Withdraw'} ${amount || '0'} DAI`
-          }
-        </button>
-      </div>
+        {isPending || isConfirming
+          ? 'Processing...'
+          : `${activeTab === 'deposit' ? 'Deposit' : 'Withdraw'} ${amount || '0'} DAI`
+        }
+      </button>
 
-      {/* Status Messages */}
-      {isConfirming && (
+      {/* Transaction Status */}
+      {hash && (
         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-blue-700 text-sm">Transaction pending...</p>
-        </div>
-      )}
-      
-      {isSuccess && (
-        <div className="mt-4 p-3 bg-green-50 rounded-lg">
-          <p className="text-green-700 text-sm">Transaction successful!</p>
+          <div className="text-sm">
+            {isConfirming && (
+              <p className="text-blue-600">Transaction confirming...</p>
+            )}
+            {isSuccess && (
+              <p className="text-green-600">Transaction successful!</p>
+            )}
+          </div>
         </div>
       )}
     </div>

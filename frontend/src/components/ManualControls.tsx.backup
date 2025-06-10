@@ -1,0 +1,309 @@
+'use client';
+
+import { useState } from 'react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { YieldVaultABI, MockAaveABI, MockCompoundABI } from '@/config/abis';
+import { contractAddresses, anvil } from '@/config/wagmi';
+import { RefreshCw, Settings, TrendingUp, Loader2 } from 'lucide-react';
+
+export default function ManualControls() {
+  const [newAPY, setNewAPY] = useState('');
+  const [protocol, setProtocol] = useState<'aave' | 'compound'>('compound');
+  const { chain } = useAccount();
+  
+  const currentChainId = chain?.id || anvil.id;
+  const vaultAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.yieldVault;
+  const aaveAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.mockAave;
+  const compoundAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.mockCompound;
+
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  const handleSetAPY = async () => {
+    if (!newAPY || !aaveAddress || !compoundAddress) return;
+
+    const targetAddress = protocol === 'aave' ? aaveAddress : compoundAddress;
+    const targetABI = protocol === 'aave' ? MockAaveABI : MockCompoundABI;
+    
+    // Convert APY percentage to basis points (multiply by 100)
+    const apyInBasisPoints = Math.round(parseFloat(newAPY) * 100);
+
+    writeContract({
+      address: targetAddress,
+      abi: targetABI,
+      functionName: 'setAPY',
+      args: [apyInBasisPoints],
+    });
+  };
+
+  const handleManualRebalance = async () => {
+    if (!vaultAddress) return;
+
+    writeContract({
+      address: vaultAddress,
+      abi: YieldVaultABI,
+      functionName: 'manualRebalance',
+    });
+  };
+
+  return (
+    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+      <div className="flex items-center gap-2 mb-6">
+        <Settings className="h-5 w-5" />
+        <h3 className="text-lg font-semibold">Manual Controls</h3>
+      </div>
+
+      {/* APY Control */}
+      <div className="space-y-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Simulate APY Change
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={protocol}
+              onChange={(e) => setProtocol(e.target.value as 'aave' | 'compound')}
+              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="aave">Aave</option>
+              <option value="compound">Compound</option>
+            </select>
+            <input
+              type="number"
+              value={newAPY}
+              onChange={(e) => setNewAPY(e.target.value)}
+              placeholder="APY %"
+              step="0.1"
+              min="0"
+              max="20"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              onClick={handleSetAPY}
+              disabled={isPending || isConfirming || !newAPY}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {isPending || isConfirming ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <TrendingUp className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Set new APY for {protocol} to trigger rebalancing
+          </p>
+        </div>
+      </div>
+
+      {/* Manual Rebalance */}
+      <div className="space-y-4">
+        <button
+          onClick={handleManualRebalance}
+          disabled={isPending || isConfirming}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {isPending || isConfirming ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          Force Rebalance Now
+        </button>
+        <p className="text-xs text-gray-500 text-center">
+          Manually trigger rebalancing check and execution
+        </p>
+      </div>
+
+      {/* Status Messages */}
+      {isConfirming && (
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <p className="text-blue-700 text-sm">Transaction pending...</p>
+        </div>
+      )}
+      
+      {isSuccess && (
+        <div className="mt-4 p-3 bg-green-50 rounded-lg">
+          <p className="text-green-700 text-sm">Transaction successful!</p>
+        </div>
+      )}
+    </div>
+  );
+}
+    hash,
+  });
+
+  // Read current APYs
+  const { data: protocolAPYs, refetch: refetchAPYs } = useReadContract({
+    address: vaultAddress,
+    abi: YieldVaultABI,
+    functionName: 'getProtocolAPYs',
+  });
+
+  // Read current protocol
+  const { data: currentProtocol, refetch: refetchProtocol } = useReadContract({
+    address: vaultAddress,
+    abi: YieldVaultABI,
+    functionName: 'currentProtocol',
+  });
+
+  const handleSetAPY = async () => {
+    if (!newAPY) return;
+
+    const targetAddress = protocol === 'aave' ? aaveAddress : compoundAddress;
+    const targetABI = protocol === 'aave' ? MockAaveABI : MockCompoundABI;
+
+    if (!targetAddress) return;
+
+    writeContract({
+      address: targetAddress,
+      abi: targetABI,
+      functionName: 'setAPY',
+      args: [BigInt(parseFloat(newAPY) * 100)], // Convert percentage to basis points
+    });
+  };
+
+  const handleManualRebalance = async () => {
+    if (!vaultAddress) return;
+
+    writeContract({
+      address: vaultAddress,
+      abi: YieldVaultABI,
+      functionName: 'manualRebalance',
+    });
+  };
+
+  const handleCheckUpkeep = async () => {
+    if (!vaultAddress) return;
+
+    // This will trigger the checkUpkeep function
+    const { data } = await writeContract({
+      address: vaultAddress,
+      abi: YieldVaultABI,
+      functionName: 'checkUpkeep',
+      args: ['0x'],
+    });
+    
+    console.log('Upkeep check result:', data);
+  };
+
+  const formatAPY = (apy: bigint | undefined) => {
+    if (!apy) return '0.00';
+    return (Number(apy) / 100).toFixed(2);
+  };
+
+  return (
+    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+      <div className="flex items-center gap-2 mb-6">
+        <Settings className="h-5 w-5" />
+        <h3 className="text-lg font-semibold">Manual Controls</h3>
+      </div>
+
+      {/* Current State */}
+      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <h4 className="font-medium mb-3">Current State</h4>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-600">Aave APY:</span>
+            <span className="font-semibold ml-2">{formatAPY(protocolAPYs?.[0])}%</span>
+          </div>
+          <div>
+            <span className="text-gray-600">Compound APY:</span>
+            <span className="font-semibold ml-2">{formatAPY(protocolAPYs?.[1])}%</span>
+          </div>
+          <div className="col-span-2">
+            <span className="text-gray-600">Active Protocol:</span>
+            <span className="font-semibold ml-2">
+              {currentProtocol === aaveAddress ? 'Aave' : 
+               currentProtocol === compoundAddress ? 'Compound' : 'Unknown'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* APY Controls */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Update Protocol APY
+        </label>
+        <div className="flex gap-2 mb-3">
+          <select
+            value={protocol}
+            onChange={(e) => setProtocol(e.target.value as 'aave' | 'compound')}
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="aave">Aave</option>
+            <option value="compound">Compound</option>
+          </select>
+          <input
+            type="number"
+            value={newAPY}
+            onChange={(e) => setNewAPY(e.target.value)}
+            placeholder="5.5"
+            step="0.1"
+            min="0"
+            max="100"
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            onClick={handleSetAPY}
+            disabled={isPending || isConfirming || !newAPY}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            {isPending || isConfirming ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <TrendingUp className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+        <p className="text-xs text-gray-500">
+          Change {protocol} APY to {newAPY || '0'}% to trigger rebalancing
+        </p>
+      </div>
+
+      {/* Manual Actions */}
+      <div className="space-y-3">
+        <button
+          onClick={handleManualRebalance}
+          disabled={isPending || isConfirming}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {isPending || isConfirming ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
+          Force Rebalance
+        </button>
+
+        <button
+          onClick={() => {
+            refetchAPYs();
+            refetchProtocol();
+          }}
+          className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Data
+        </button>
+      </div>
+
+      {/* Status Messages */}
+      {isConfirming && (
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <p className="text-blue-700 text-sm">Transaction pending...</p>
+        </div>
+      )}
+      
+      {isSuccess && (
+        <div className="mt-4 p-3 bg-green-50 rounded-lg">
+          <p className="text-green-700 text-sm">Transaction successful!</p>
+        </div>
+      )}
+    </div>
+  );
+}

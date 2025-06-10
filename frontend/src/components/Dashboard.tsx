@@ -7,6 +7,7 @@ import VaultStats from './VaultStats';
 import DepositWithdraw from './DepositWithdraw';
 import ProtocolComparison from './ProtocolComparison';
 import RebalanceHistory from './RebalanceHistory';
+import ManualControls from './ManualControls';
 import { Zap, TrendingUp, Shield, Activity } from 'lucide-react';
 
 export default function Dashboard() {
@@ -104,9 +105,10 @@ export default function Dashboard() {
                 <DepositWithdraw />
               </div>
               
-              {/* Right Column - Protocol Comparison */}
+              {/* Right Column - Protocol Comparison and Controls */}
               <div className="space-y-6">
                 <ProtocolComparison />
+                <ManualControls />
                 <RebalanceHistory />
               </div>
             </div>

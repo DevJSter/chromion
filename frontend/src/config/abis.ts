@@ -1,145 +1,237 @@
+// Complete ABIs for all contracts
 export const YieldVaultABI = [
   {
+    "type": "constructor",
     "inputs": [
-      {"name": "_token", "type": "address"},
-      {"name": "_aave", "type": "address"},
-      {"name": "_compound", "type": "address"}
+      {"name": "_token", "type": "address", "internalType": "address"},
+      {"name": "_aave", "type": "address", "internalType": "address"},
+      {"name": "_compound", "type": "address", "internalType": "address"}
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [{"name": "amount", "type": "uint256"}],
+    "type": "function",
     "name": "deposit",
+    "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [{"name": "amount", "type": "uint256"}],
+    "type": "function",
     "name": "withdraw",
+    "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [{"name": "user", "type": "address"}],
+    "type": "function",
     "name": "getBalance",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [{"name": "user", "type": "address", "internalType": "address"}],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
-    "name": "getCurrentProtocolInfo",
-    "outputs": [
-      {"name": "name", "type": "string"},
-      {"name": "apy", "type": "uint256"},
-      {"name": "balance", "type": "uint256"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getProtocolAPYs",
-    "outputs": [
-      {"name": "aaveAPY", "type": "uint256"},
-      {"name": "compoundAPY", "type": "uint256"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
+    "type": "function",
     "name": "totalAssets",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
-    "name": "rebalanceThreshold",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "name": "user", "type": "address"},
-      {"indexed": false, "name": "amount", "type": "uint256"}
+    "type": "function",
+    "name": "getCurrentProtocolInfo",
+    "inputs": [],
+    "outputs": [
+      {"name": "name", "type": "string", "internalType": "string"},
+      {"name": "apy", "type": "uint256", "internalType": "uint256"},
+      {"name": "balance", "type": "uint256", "internalType": "uint256"}
     ],
-    "name": "Deposited",
-    "type": "event"
+    "stateMutability": "view"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "name": "user", "type": "address"},
-      {"indexed": false, "name": "amount", "type": "uint256"}
+    "type": "function",
+    "name": "getProtocolAPYs",
+    "inputs": [],
+    "outputs": [
+      {"name": "aaveAPY", "type": "uint256", "internalType": "uint256"},
+      {"name": "compoundAPY", "type": "uint256", "internalType": "uint256"}
     ],
-    "name": "Withdrawn",
-    "type": "event"
+    "stateMutability": "view"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "name": "oldProtocol", "type": "address"},
-      {"indexed": true, "name": "newProtocol", "type": "address"},
-      {"indexed": false, "name": "amount", "type": "uint256"},
-      {"indexed": false, "name": "oldAPY", "type": "uint256"},
-      {"indexed": false, "name": "newAPY", "type": "uint256"}
+    "type": "function",
+    "name": "currentProtocol",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "address", "internalType": "contract ILendingProtocol"}],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "manualRebalance",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "checkUpkeep",
+    "inputs": [{"name": "", "type": "bytes", "internalType": "bytes"}],
+    "outputs": [
+      {"name": "upkeepNeeded", "type": "bool", "internalType": "bool"},
+      {"name": "", "type": "bytes", "internalType": "bytes"}
     ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "performUpkeep",
+    "inputs": [{"name": "", "type": "bytes", "internalType": "bytes"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
     "name": "Rebalanced",
-    "type": "event"
+    "inputs": [
+      {"name": "oldProtocol", "type": "address", "indexed": true, "internalType": "address"},
+      {"name": "newProtocol", "type": "address", "indexed": true, "internalType": "address"},
+      {"name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256"},
+      {"name": "oldAPY", "type": "uint256", "indexed": false, "internalType": "uint256"},
+      {"name": "newAPY", "type": "uint256", "indexed": false, "internalType": "uint256"}
+    ],
+    "anonymous": false
   }
 ] as const;
 
 export const MockDAIABI = [
   {
+    "type": "function",
+    "name": "mint",
     "inputs": [
-      {"name": "spender", "type": "address"},
-      {"name": "amount", "type": "uint256"}
+      {"name": "to", "type": "address", "internalType": "address"},
+      {"name": "amount", "type": "uint256", "internalType": "uint256"}
     ],
-    "name": "approve",
-    "outputs": [{"name": "", "type": "bool"}],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "account", "type": "address"}],
-    "name": "balanceOf",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "faucet",
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [],
-    "name": "name",
-    "outputs": [{"name": "", "type": "string"}],
-    "stateMutability": "view",
-    "type": "function"
+    "type": "function",
+    "name": "balanceOf",
+    "inputs": [{"name": "account", "type": "address", "internalType": "address"}],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
-    "name": "symbol",
-    "outputs": [{"name": "", "type": "string"}],
-    "stateMutability": "view",
-    "type": "function"
+    "type": "function",
+    "name": "approve",
+    "inputs": [
+      {"name": "spender", "type": "address", "internalType": "address"},
+      {"name": "amount", "type": "uint256", "internalType": "uint256"}
+    ],
+    "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
+    "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "allowance",
+    "inputs": [
+      {"name": "owner", "type": "address", "internalType": "address"},
+      {"name": "spender", "type": "address", "internalType": "address"}
+    ],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transfer",
+    "inputs": [
+      {"name": "to", "type": "address", "internalType": "address"},
+      {"name": "amount", "type": "uint256", "internalType": "uint256"}
+    ],
+    "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "totalSupply",
     "inputs": [],
-    "name": "decimals",
-    "outputs": [{"name": "", "type": "uint8"}],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
+  }
+] as const;
+
+export const MockAaveABI = [
+  {
+    "type": "function",
+    "name": "getAPY",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setAPY",
+    "inputs": [{"name": "newAPY", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getName",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "string", "internalType": "string"}],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "deposit",
+    "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  }
+] as const;
+
+export const MockCompoundABI = [
+  {
+    "type": "function",
+    "name": "getAPY",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setAPY",
+    "inputs": [{"name": "newAPY", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getName",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "string", "internalType": "string"}],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "deposit",
+    "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   }
 ] as const;
