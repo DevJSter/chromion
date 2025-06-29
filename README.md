@@ -1,10 +1,10 @@
-# 🚀 Chainlink Auto-Yield Portfolio Manager
+# Chainlink Auto-Yield Portfolio Manager
 
-> **STATUS: ✅ COMPLETE & READY FOR DEMO**
+**STATUS: COMPLETE & READY FOR DEMO**
 
 A non-custodial smart vault that automatically reallocates user funds between lending protocols (Aave and Compound) to optimize yield, powered by Chainlink Automation and Data Feeds.
 
-## 🎯 Quick Start
+## Quick Start
 
 ```bash
 # 1. Start Anvil
@@ -19,71 +19,71 @@ cd frontend && npm install && npm run dev
 # 4. Open http://localhost:3000
 ```
 
-## ✅ Features Complete
+## Features Complete
 
-- **Smart Contracts**: YieldVault with Chainlink Automation ✅
-- **Frontend**: Modern Next.js app with Web3 integration ✅  
-- **Testing**: 13/13 tests passing ✅
-- **Demo**: Full functionality demonstration ✅
-- **Documentation**: Complete project guide ✅
+- Smart Contracts: YieldVault with Chainlink Automation
+- Frontend: Modern Next.js app with Web3 integration  
+- Testing: 13/13 tests passing
+- Demo: Full functionality demonstration
+- Documentation: Complete project guide
 
-## 📊 Live Demo
+## Live Demo
 
-- **Contracts**: Deployed on local Anvil at addresses in `.env`
-- **Frontend**: http://localhost:3000
-- **Demo Script**: `./demo.sh` for full walkthrough
-
----
-
-Perfect. You're building a **Chainlink-powered Auto-Yield Portfolio Manager** — let's break this down step by step. This will be a **non-custodial smart vault** that reallocates user funds into different yield sources automatically based on conditions like APY, time, or price movement.
+- Contracts: Deployed on local Anvil at addresses in `.env`
+- Frontend: http://localhost:3000
+- Demo Script: `./demo.sh` for full walkthrough
 
 ---
 
-## ✅ 1. **Feature Breakdown (MVP Scope)**
-
-### 🎯 Core User Flow:
-
-1. User deposits ETH or stablecoins (e.g., DAI).
-2. Vault allocates funds to a protocol with the highest yield (e.g., Aave, Compound).
-3. Chainlink Automation monitors APY/conditions.
-4. When another protocol offers better yield, the vault rebalances user funds.
+You're building a Chainlink-powered Auto-Yield Portfolio Manager. This is a non-custodial smart vault that reallocates user funds into different yield sources automatically based on conditions like APY, time, or price movement.
 
 ---
 
-### 🧩 MVP Features:
+## 1. Feature Breakdown (MVP Scope)
+
+### Core User Flow
+
+1. User deposits ETH or stablecoins (for example, DAI).
+2. The vault allocates funds to the protocol with the highest yield (Aave or Compound).
+3. Chainlink Automation monitors APY and other conditions.
+4. When another protocol offers a better yield, the vault rebalances user funds.
+
+---
+
+### MVP Features
 
 | Feature                  | Description                                                             |
 | ------------------------ | ----------------------------------------------------------------------- |
-| **Deposit/Withdraw**     | Users can stake and unstake their tokens into the vault.                |
-| **Yield Allocation**     | Vault chooses between Aave and Compound based on APY.                   |
-| **Chainlink Automation** | Runs a check every X blocks to decide if a rebalance is needed.         |
-| **Chainlink Data Feeds** | Fetch APY or interest rate feeds (mocked if real ones are unavailable). |
-| **Rebalancer Logic**     | Withdraw from old protocol → deposit into new one automatically.        |
-| **UI Dashboard**         | Show current vault status, yields, rebalance events, etc.               |
+| Deposit/Withdraw         | Users can stake and unstake their tokens into the vault.                |
+| Yield Allocation         | Vault chooses between Aave and Compound based on APY.                   |
+| Chainlink Automation     | Runs a check every X blocks to decide if a rebalance is needed.         |
+| Chainlink Data Feeds     | Fetch APY or interest rate feeds (mocked if real ones are unavailable). |
+| Rebalancer Logic         | Withdraw from old protocol and deposit into new one automatically.      |
+| UI Dashboard             | Show current vault status, yields, rebalance events, and more.          |
 
 ---
 
-## 🔗 2. **Chainlink Integration Plan**
+## 2. Chainlink Integration Plan
 
-### 🛠️ Tools You'll Use:
+### Tools You'll Use
 
 | Tool                     | Purpose                                                            |
 | ------------------------ | ------------------------------------------------------------------ |
-| **Automation**           | Automate yield checking + protocol switching.                      |
-| **Data Feeds**           | APY or interest rate data (or mock from a price feed for demo).    |
-| **Functions (optional)** | Pull custom yield data or external DEX/APR APIs (e.g., DefiLlama). |
+| Automation               | Automate yield checking and protocol switching.                    |
+| Data Feeds               | APY or interest rate data (or mock from a price feed for demo).    |
+| Functions (optional)     | Pull custom yield data or external DEX/APR APIs (for example, DefiLlama). |
 
-### 🔁 Example Automation Flow:
+### Example Automation Flow
 
-* Every 6 hours, a Chainlink Keeper checks:
+Every 6 hours, a Chainlink Keeper checks:
 
-  * Aave DAI yield = 3.5%
-  * Compound DAI yield = 5.1%
-  * ✅ Switch to Compound if delta > 1%
+- Aave DAI yield = 3.5%
+- Compound DAI yield = 5.1%
+- Switch to Compound if the difference is greater than 1%
 
 ---
 
-## 🧱 3. **Smart Contract Boilerplate (Vault Skeleton)**
+## 3. Smart Contract Boilerplate (Vault Skeleton)
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -125,99 +125,98 @@ contract YieldVault {
         uint256 compoundAPY = compound.getAPY();
 
         if (compoundAPY > aaveAPY + 100) {
-            // Withdraw from Aave → Deposit to Compound
+            // Withdraw from Aave and deposit to Compound
             currentProtocol = address(compound);
         } else if (aaveAPY > compoundAPY + 100) {
-            // Withdraw from Compound → Deposit to Aave
+            // Withdraw from Compound and deposit to Aave
             currentProtocol = address(aave);
         }
     }
 }
 ```
 
-🛠️ Add access control, reentrancy guard, and real token logic for production. This is a clean MVP.
+Add access control, reentrancy guard, and real token logic for production. This is a clean MVP.
 
 ---
 
-## ⚙️ 4. **Frontend Idea (Tailwind + Ethers.js)**
+## 4. Frontend Idea (Tailwind and Ethers.js)
 
-### 📄 Pages/Components:
+### Pages/Components
 
-1. **Dashboard**
+1. Dashboard
 
-   * [x] Current vault value
-   * [x] Current protocol (Aave/Compound)
-   * [x] Estimated APY
-   * [x] Rebalance logs
+   - Current vault value
+   - Current protocol (Aave or Compound)
+   - Estimated APY
+   - Rebalance logs
 
-2. **Deposit/Withdraw**
+2. Deposit/Withdraw
 
-   * Simple form to stake/unstake tokens
+   - Simple form to stake or unstake tokens
 
-3. **Yield Comparison Graph**
+3. Yield Comparison Graph
 
-   * (Optional) Chart of past APYs (mock or real)
+   - (Optional) Chart of past APYs (mock or real)
 
 ---
 
-### 💻 Stack:
+### Stack
 
 | Component            | Tech                           |
 | -------------------- | ------------------------------ |
-| UI                   | TailwindCSS + React            |
+| UI                   | TailwindCSS and React          |
 | Wallet               | RainbowKit / Wagmi / Ethers.js |
 | Chainlink Automation | Register upkeep job            |
 | Charting             | Chart.js or Recharts (for APY) |
 
 ---
 
-### 🧠 DEX Integration: **Needed?**
+### DEX Integration: Needed?
 
-Not directly **at MVP**, but:
+Not directly at MVP, but:
 
-* You’ll **need token swaps** *if* the vault supports yield in multiple tokens.
-* For example, if yield on Compound is in cDAI, and you want to switch to ETH → DEX call required (Uniswap or 1inch).
-* You can **mock this step** to keep things simple for the hackathon — say all vaults use DAI.
+- You’ll need token swaps if the vault supports yield in multiple tokens.
+- For example, if yield on Compound is in cDAI, and you want to switch to ETH, a DEX call is required (Uniswap or 1inch).
+- You can mock this step to keep things simple for the hackathon — assume all vaults use DAI.
 
 ---
 
-## 🎁 Optional Power-Ups (for judging bonus):
+## Optional Power-Ups (for judging bonus)
 
-* Chainlink **Functions** to fetch live APYs from DefiLlama or APIs.
-* UI leaderboard: Top users based on ROI
-* Add **NFT vault access** (only holders can use it)
+- Chainlink Functions to fetch live APYs from DefiLlama or APIs.
+- UI leaderboard: Top users based on ROI
+- Add NFT vault access (only holders can use it)
 
 ---
 
 Would you like me to scaffold the contract with proper token logic and mock lending protocol interfaces? Or generate a React/Tailwind UI shell you can plug into?
 
-
-Perfect. Here's a clear, **high-level overview** of your Chainlink hackathon project:
-
----
-
-# 🚀 Project: **Auto-Yield Vault**
-
-> A smart contract vault that **automatically reallocates user funds** between lending protocols (like Aave and Compound) to **optimize yield**, powered by **Chainlink Automation + Data Feeds**.
+Here’s a clear, high-level overview of your Chainlink hackathon project:
 
 ---
 
-## 🧠 Concept Summary
+# Project: Auto-Yield Vault
+
+A smart contract vault that automatically reallocates user funds between lending protocols (like Aave and Compound) to optimize yield, powered by Chainlink Automation and Data Feeds.
+
+---
+
+## Concept Summary
 
 | Aspect           | Description                                                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Problem**      | DeFi users must manually chase yield, which is inefficient and error-prone.                                              |
-| **Solution**     | A non-custodial smart vault that uses Chainlink to monitor yields and auto-switch funds to the most profitable protocol. |
-| **Target Users** | DeFi investors who want passive optimized returns.                                                                       |
+| Problem          | DeFi users must manually chase yield, which is inefficient and error-prone.                                              |
+| Solution         | A non-custodial smart vault that uses Chainlink to monitor yields and auto-switch funds to the most profitable protocol. |
+| Target Users     | DeFi investors who want passive optimized returns.                                                                       |
 
 ---
 
-## 🧩 Architecture Overview
+## Architecture Overview
 
 ```
 +-----------------------------+
 |       User Interface        |
-| (React + Tailwind + Ethers)|
+| (React + Tailwind + Ethers) |
 +-------------+---------------+
               |
               v
@@ -228,8 +227,8 @@ Perfect. Here's a clear, **high-level overview** of your Chainlink hackathon pro
               |
               v
 +-----------------------------+        +-----------------------------+
-|   Lending Protocol A (e.g. Aave)     |   Lending Protocol B (e.g. Compound) |
-|   (real or mock)             |       |   (real or mock)             |
+|   Lending Protocol A        |        |   Lending Protocol B        |
+|   (e.g. Aave, real or mock) |        |   (e.g. Compound, real or mock) |
 +-----------------------------+        +-----------------------------+
               ^
               |
@@ -245,69 +244,69 @@ Perfect. Here's a clear, **high-level overview** of your Chainlink hackathon pro
 
 ---
 
-## 🔗 Chainlink Usage
+## Chainlink Usage
 
 | Tool                      | Purpose                                                             |
 | ------------------------- | ------------------------------------------------------------------- |
-| **Automation**            | Calls `rebalance()` on the vault every few hours.                   |
-| **Data Feeds / Mock APY** | Feeds current yields from Aave/Compound (or mocked).                |
-| **(Optional) Functions**  | Pull live APYs from APIs like DeFi Llama, if you want extra credit. |
+| Automation                | Calls `rebalance()` on the vault every few hours.                   |
+| Data Feeds / Mock APY     | Feeds current yields from Aave/Compound (or mocked).                |
+| (Optional) Functions      | Pull live APYs from APIs like DeFi Llama, if you want extra credit. |
 
 ---
 
-## 🔨 Technical Stack
+## Technical Stack
 
-### ✅ Smart Contracts
+### Smart Contracts
 
-* ERC20-based Vault (Solidity)
-* Mock Lending Contracts (Aave, Compound clones)
-* Rebalance logic based on `getAPY()`
+- ERC20-based Vault (Solidity)
+- Mock Lending Contracts (Aave, Compound clones)
+- Rebalance logic based on `getAPY()`
 
-### ✅ Frontend
+### Frontend
 
-* **React + Tailwind**
-* Wallet connection (Wagmi + Ethers.js)
-* Dashboard: deposit/withdraw, current APY, active protocol
-* Optional: APY chart, vault history
+- React and Tailwind
+- Wallet connection (Wagmi and Ethers.js)
+- Dashboard: deposit/withdraw, current APY, active protocol
+- Optional: APY chart, vault history
 
 ---
 
-## 🎯 Hackathon Features (MVP)
+## Hackathon Features (MVP)
 
 | Feature                            | Status                                |
 | ---------------------------------- | ------------------------------------- |
-| ✅ Deposit/withdraw UI              | Yes                                   |
-| ✅ Yield simulation                 | Use mock lending pools with fixed APY |
-| ✅ Chainlink Automation integration | For periodic rebalancing              |
-| ✅ Data Feed or mock APY input      | Used to trigger strategy switch       |
-| ✅ Clear UX                         | Show current protocol + APY to user   |
+| Deposit/withdraw UI                | Yes                                   |
+| Yield simulation                   | Use mock lending pools with fixed APY |
+| Chainlink Automation integration   | For periodic rebalancing              |
+| Data Feed or mock APY input        | Used to trigger strategy switch       |
+| Clear UX                           | Show current protocol and APY to user |
 
 ---
 
-## 🧪 Demo Plan
+## Demo Plan
 
-* Deploy mock Aave and Compound contracts with different APY values
-* Show funds being moved from one protocol to another
-* Use Chainlink Automation to trigger `rebalance()` on testnet (Sepolia/Optimism Sepolia)
-* Use test tokens (DAI) for user deposits
-* Frontend shows vault state updating in real-time
+- Deploy mock Aave and Compound contracts with different APY values
+- Show funds being moved from one protocol to another
+- Use Chainlink Automation to trigger `rebalance()` on testnet (Sepolia/Optimism Sepolia)
+- Use test tokens (DAI) for user deposits
+- Frontend shows vault state updating in real-time
 
 ---
 
-## 🔥 Judge-Winning Angles
+## Judge-Winning Angles
 
-* **Real-world use case**: Users want this today.
-* **Chainlink native**: Clean integration with Automation + Feeds.
-* **Solo-friendly**: Smart scope, yet looks impressive.
-* **Bonus potential**: Add AI suggestions, NFTs, leaderboard, or Telegram alerts later.
+- Real-world use case: Users want this today.
+- Chainlink native: Clean integration with Automation and Feeds.
+- Solo-friendly: Smart scope, yet looks impressive.
+- Bonus potential: Add AI suggestions, NFTs, leaderboard, or Telegram alerts later.
 
 ---
 
 Let me know which part you want to build next:
 
-* Vault contract with mock protocol hooks?
-* Mock lending contracts with fixed APYs?
-* Frontend starter template?
-* Chainlink Automation example?
+- Vault contract with mock protocol hooks?
+- Mock lending contracts with fixed APYs?
+- Frontend starter template?
+- Chainlink Automation example?
 
-Just say the word — I’ll scaffold it fast.
+Just say the word and I’ll scaffold it.
