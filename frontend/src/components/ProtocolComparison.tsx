@@ -10,7 +10,7 @@ import { useAccount } from 'wagmi';
 export default function ProtocolComparison() {
   const { chain } = useAccount();
   const currentChainId = chain?.id || anvil.id;
-  const vaultAddress = contractAddresses[currentChainId]?.yieldVault;
+  const vaultAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.yieldVault;
 
   // Read protocol APYs
   const { data: protocolAPYs } = useReadContract({
@@ -53,9 +53,9 @@ export default function ProtocolComparison() {
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+    <div className="bg-white/60 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Protocol Comparison</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Protocol Comparison</h2>
         <TrendingUp className="h-6 w-6 text-blue-600" />
       </div>
 
@@ -99,41 +99,41 @@ export default function ProtocolComparison() {
             key={protocol.name}
             className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
               protocol.isActive
-                ? 'border-blue-200 bg-blue-50'
-                : 'border-gray-200 bg-gray-50'
+                ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
             }`}
           >
             <div className="flex items-center">
               <div className={`w-3 h-3 rounded-full mr-3 ${
                 protocol.isActive ? 'bg-blue-600' : 'bg-gray-400'
               }`} />
-              <span className="font-medium text-gray-900">{protocol.name}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{protocol.name}</span>
               {protocol.isActive && (
-                <div className="ml-2 flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                <div className="ml-2 flex items-center text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
                   <Activity className="h-3 w-3 mr-1" />
                   Active
                 </div>
               )}
             </div>
             <div className="text-right">
-              <span className="text-lg font-bold text-gray-900">
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
                 {protocol.apy.toFixed(2)}%
               </span>
-              <p className="text-xs text-gray-600">APY</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">APY</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Rebalance Info */}
-      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
         <div className="flex items-start">
-          <Activity className="h-5 w-5 text-blue-600 mr-3 mt-0.5" />
+          <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" />
           <div>
-            <h4 className="font-medium text-blue-900 mb-1">
+            <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-1">
               Automatic Rebalancing
             </h4>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
               The vault automatically moves funds to the protocol with the highest APY 
               when the difference exceeds 1%. Powered by Chainlink Automation.
             </p>

@@ -10,8 +10,8 @@ export default function VaultStats() {
   const { address, chain } = useAccount();
   
   const currentChainId = chain?.id || anvil.id;
-  const vaultAddress = contractAddresses[currentChainId]?.yieldVault;
-  const daiAddress = contractAddresses[currentChainId]?.mockDAI;
+  const vaultAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.yieldVault;
+  const daiAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.mockDAI;
 
   // Read user balance
   const { data: userBalance } = useReadContract({
@@ -65,8 +65,8 @@ export default function VaultStats() {
   const compoundAPY = protocolAPYs?.[1];
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Vault Overview</h2>
+    <div className="bg-white/60 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Vault Overview</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Your Balance */}
@@ -121,18 +121,18 @@ export default function VaultStats() {
       {/* Protocol Comparison */}
       {aaveAPY && compoundAPY && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-900">Aave APY</span>
-              <span className="text-lg font-bold text-gray-900">
+              <span className="font-medium text-gray-900 dark:text-white">Aave APY</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
                 {formatAPY(aaveAPY)}%
               </span>
             </div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-900">Compound APY</span>
-              <span className="text-lg font-bold text-gray-900">
+              <span className="font-medium text-gray-900 dark:text-white">Compound APY</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
                 {formatAPY(compoundAPY)}%
               </span>
             </div>

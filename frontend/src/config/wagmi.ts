@@ -18,10 +18,32 @@ export const anvil = defineChain({
   },
 })
 
+// Define Avalanche Chainlink chain
+export const avaxChainlinkChain = defineChain({
+  id: 60794123,
+  name: 'Avalanche Chainlink Chain',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'AVAX',
+    symbol: 'AVAX',
+  },
+  rpcUrls: {
+    default: {
+      http: ['/api/rpc'], // Use Next.js API proxy to avoid CORS
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Avalanche Explorer',
+      url: 'http://127.0.0.1:9650',
+    },
+  },
+})
+
 export const config = getDefaultConfig({
   appName: 'Chainlink Auto-Yield Vault',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'default-project-id',
-  chains: [anvil, mainnet, polygon, optimism, arbitrum, sepolia],
+  chains: [avaxChainlinkChain, anvil, mainnet, polygon, optimism, arbitrum, sepolia],
   ssr: true, // If your dApp uses server side rendering (SSR)
 });
 
@@ -34,6 +56,12 @@ export const contracts = {
 } as const;
 
 export const contractAddresses = {
+  [avaxChainlinkChain.id]: {
+    mockDAI: contracts.mockDAI,
+    mockAave: contracts.mockAave,
+    mockCompound: contracts.mockCompound,
+    yieldVault: contracts.yieldVault,
+  },
   [anvil.id]: {
     mockDAI: contracts.mockDAI,
     mockAave: contracts.mockAave,

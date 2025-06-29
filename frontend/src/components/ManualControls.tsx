@@ -50,23 +50,23 @@ export default function ManualControls() {
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+    <div className="bg-white/60 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
       <div className="flex items-center gap-2 mb-6">
-        <Settings className="h-5 w-5" />
-        <h3 className="text-lg font-semibold">Manual Controls</h3>
+        <Settings className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Manual Controls</h3>
       </div>
 
       {/* APY Control */}
       <div className="space-y-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Simulate APY Change
           </label>
           <div className="flex gap-2">
             <select
               value={protocol}
               onChange={(e) => setProtocol(e.target.value as 'aave' | 'compound')}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="aave">Aave</option>
               <option value="compound">Compound</option>
@@ -79,7 +79,7 @@ export default function ManualControls() {
               step="0.1"
               min="0"
               max="20"
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button
               onClick={handleSetAPY}
@@ -93,7 +93,7 @@ export default function ManualControls() {
               )}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Set new APY for {protocol} to trigger rebalancing
           </p>
         </div>
@@ -113,21 +113,21 @@ export default function ManualControls() {
           )}
           Force Rebalance Now
         </button>
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
           Manually trigger rebalancing check and execution
         </p>
       </div>
 
       {/* Status Messages */}
       {isConfirming && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-blue-700 text-sm">Transaction pending...</p>
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/50 rounded-lg">
+          <p className="text-blue-700 dark:text-blue-300 text-sm">Transaction pending...</p>
         </div>
       )}
       
       {isSuccess && (
-        <div className="mt-4 p-3 bg-green-50 rounded-lg">
-          <p className="text-green-700 text-sm">Transaction successful!</p>
+        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/50 rounded-lg">
+          <p className="text-green-700 dark:text-green-300 text-sm">Transaction successful!</p>
         </div>
       )}
     </div>

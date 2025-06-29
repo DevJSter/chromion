@@ -14,8 +14,17 @@ export default function DepositWithdraw() {
   const { address, chain } = useAccount();
   
   const currentChainId = chain?.id || anvil.id;
-  const vaultAddress = contractAddresses[currentChainId]?.yieldVault;
-  const daiAddress = contractAddresses[currentChainId]?.mockDAI;
+  const vaultAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.yieldVault;
+  const daiAddress = contractAddresses[currentChainId as keyof typeof contractAddresses]?.mockDAI;
+
+  // Debug logging
+  console.log('DepositWithdraw Debug:', {
+    address,
+    chainId: currentChainId,
+    vaultAddress,
+    daiAddress,
+    isConnected: !!address
+  });
 
   const { writeContract, data: hash, isPending } = useWriteContract();
   
@@ -84,7 +93,7 @@ export default function DepositWithdraw() {
     if (!amount || !vaultAddress) return;
 
     const amountWei = parseEther(amount);
-    const currentAllowance = allowance || 0n;
+    const currentAllowance = allowance || BigInt(0);
 
     if (currentAllowance < amountWei) {
       await handleApprove();
@@ -125,13 +134,13 @@ export default function DepositWithdraw() {
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+    <div className="bg-white/60 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Deposit & Withdraw</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Deposit & Withdraw</h2>
         <button
           onClick={handleMintDAI}
           disabled={isPending || isConfirming}
-          className="flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          className="flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
         >
           {isPending || isConfirming ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -143,13 +152,13 @@ export default function DepositWithdraw() {
       </div>
 
       {/* Tab Buttons */}
-      <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+      <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6">
         <button
           onClick={() => setActiveTab('deposit')}
           className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md font-medium transition-colors ${
             activeTab === 'deposit'
-              ? 'bg-white text-green-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white dark:bg-gray-600 text-green-600 dark:text-green-400 shadow-sm'
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           <ArrowDown className="h-4 w-4 mr-2" />
@@ -159,8 +168,8 @@ export default function DepositWithdraw() {
           onClick={() => setActiveTab('withdraw')}
           className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md font-medium transition-colors ${
             activeTab === 'withdraw'
-              ? 'bg-white text-red-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white dark:bg-gray-600 text-red-600 dark:text-red-400 shadow-sm'
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           <ArrowUp className="h-4 w-4 mr-2" />
@@ -169,20 +178,20 @@ export default function DepositWithdraw() {
       </div>
 
       {/* Balance Display */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-600">DAI Balance:</span>
-          <span className="font-medium">{formatBalance(daiBalance)} DAI</span>
+          <span className="text-gray-600 dark:text-gray-400">DAI Balance:</span>
+          <span className="font-medium text-gray-900 dark:text-white">{formatBalance(daiBalance)} DAI</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Vault Balance:</span>
-          <span className="font-medium">{formatBalance(vaultBalance)} DAI</span>
+          <span className="text-gray-600 dark:text-gray-400">Vault Balance:</span>
+          <span className="font-medium text-gray-900 dark:text-white">{formatBalance(vaultBalance)} DAI</span>
         </div>
       </div>
 
       {/* Amount Input */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Amount to {activeTab}
         </label>
         <div className="relative">
@@ -193,15 +202,15 @@ export default function DepositWithdraw() {
             placeholder="0.00"
             step="0.01"
             min="0"
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
           />
-          <div className="absolute right-3 top-3 text-gray-500">DAI</div>
+          <div className="absolute right-3 top-3 text-gray-500 dark:text-gray-400">DAI</div>
         </div>
-        <div className="flex justify-between mt-2 text-sm text-gray-600">
+        <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-400">
           <span>Available: {activeTab === 'deposit' ? maxDeposit : maxWithdraw} DAI</span>
           <button
             onClick={() => setAmount(activeTab === 'deposit' ? maxDeposit : maxWithdraw)}
-            className="text-blue-600 hover:text-blue-800 font-medium"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
           >
             Use Max
           </button>
@@ -248,14 +257,14 @@ export default function DepositWithdraw() {
 
       {/* Status Messages */}
       {isConfirming && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-blue-700 text-sm">Transaction pending...</p>
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/50 rounded-lg">
+          <p className="text-blue-700 dark:text-blue-300 text-sm">Transaction pending...</p>
         </div>
       )}
       
       {isSuccess && (
-        <div className="mt-4 p-3 bg-green-50 rounded-lg">
-          <p className="text-green-700 text-sm">Transaction successful!</p>
+        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/50 rounded-lg">
+          <p className="text-green-700 dark:text-green-300 text-sm">Transaction successful!</p>
         </div>
       )}
     </div>
